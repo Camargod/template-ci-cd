@@ -1,22 +1,10 @@
-### Git ###
-# Created by git for backups. To disable backups in Git:
-# $ git config --global mergetool.keepBackup false
-*.orig
-
-# Created by git when using merge tools for conflicts
-*.BACKUP.*
-*.BASE.*
-*.LOCAL.*
-*.REMOTE.*
-*_BACKUP_*.txt
-*_BASE_*.txt
-*_LOCAL_*.txt
-*_REMOTE_*.txt
+# Created by https://www.toptal.com/developers/gitignore/api/terraform
+# Edit at https://www.toptal.com/developers/gitignore?templates=terraform
 
 ### Terraform ###
 # Local .terraform directories
 **/.terraform/*
-.terraform.lock.hcl
+
 # .tfstate files
 *.tfstate
 *.tfstate.*
@@ -29,7 +17,7 @@ crash.*.log
 # password, private keys, and other secrets. These should not be part of version
 # control as they are data points which are potentially sensitive and subject
 # to change depending on the environment.
-# *.tfvars
+*.tfvars
 *.tfvars.json
 
 # Ignore override files as they are usually used to override resources locally and so
@@ -49,5 +37,4 @@ override.tf.json
 .terraformrc
 terraform.rc
 
-.DS_Store
-**/.DS_Store
+# End of https://www.toptal.com/developers/gitignore/api/terraform
