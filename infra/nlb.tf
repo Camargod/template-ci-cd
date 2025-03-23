@@ -11,7 +11,6 @@ resource "aws_lb" "this" {
   }
 }
 
-
 # Crie um listener para o NLB
 resource "aws_lb_listener" "this" {
   load_balancer_arn = aws_lb.this.arn
