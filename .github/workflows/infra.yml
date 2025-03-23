@@ -1,4 +1,4 @@
-name: 'Terraform Infra'
+name: 'Deploy Infra'
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
       - infra
 env:
   TF_VERSION: 1.10.5
-  DESTROY: true
+  TF_LINT_VERSION: v0.52.0
+  DESTROY: false
   ENVIRONMENT: prod
 jobs:
   terraform:
@@ -20,15 +21,23 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Configure AWS credentials
+    - name: AWS | Configure credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-        aws-region: ${{ secrets.AWS_REGION }}
+        aws-region: ${{ vars.AWS_REGION }}
+
+    - name: Terraform-docs | Generate documentation
+      uses: terraform-docs/gh-actions@v1.3.0
+      with:
+        working-dir: ./infra
+        output-file: README.md
+        output-method: inject
+        git-push: "true"
 
     - name: Terraform | Check required version
       run: |
@@ -53,16 +62,11 @@ jobs:
           echo "terraform {
             backend \"s3\" {
               bucket   = \"${{ secrets.AWS_ACCOUNT_ID }}-tfstate\"
-              key      = \"${{ secrets.AWS_ACCOUNT_ID }}/"${{ env.ENVIRONMENT }}.tfvars"\"
-              region   = \"${{ secrets.AWS_REGION }}\"
+              key      = \"infra-${{ env.ENVIRONMENT }}.tfstate\"
+              region   = \"${{ vars.AWS_REGION }}\"
             }
           }" >> provider.tf
           cat provider.tf
-
-    # - name: Render terraform docs inside the README.md and push changes back to PR branch
-    #   uses: terraform-docs/gh-actions@v1.3.0
-    #   with:
-    #     working-dir: ./infra
 
     - name: Terraform | Initialize backend
       run: terraform init
@@ -73,29 +77,29 @@ jobs:
     - name: Terraform | Check Syntax IaC Code
       run: terraform validate
 
-    - uses: actions/cache@v4
-      name: Cache plugin dir
+    - name: TFlint | Cache plugin directory
+      uses: actions/cache@v4
       with:
         path: ~/.tflint.d/plugins
         key: ${{ matrix.os }}-tflint-${{ hashFiles('.tflint.hcl') }}
 
-    - uses: terraform-linters/setup-tflint@v4
-      name: Setup TFLint
+    - name: TFlint | Setup TFLint
+      uses: terraform-linters/setup-tflint@v4
       with:
-        tflint_version: v0.52.0
-    - name: Show version
+        tflint_version: ${{ env.TF_LINT_VERSION }}
+
+    - name: TFlint | Show version
       run: tflint --version
 
-    - name: Init TFLint
+    - name: TFlint | Init TFLint
       run: tflint --init
       env:
-        # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
         GITHUB_TOKEN: ${{ github.token }}
 
-    - name: Run TFLint
+    - name: TFlint | Run TFLint
       run: tflint -f compact
 
-    - name: tfsec
+    - name: TFSec | Security Checks
       uses: aquasecurity/tfsec-action@v1.0.0
       with:
         soft_fail: true
